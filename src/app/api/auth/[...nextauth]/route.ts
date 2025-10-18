@@ -1,57 +1,66 @@
 // src/app/api/auth/[...nextauth]/route.ts
-     import NextAuth from 'next-auth';
-     import CredentialsProvider from 'next-auth/providers/credentials';
-     import { connectToDatabase } from '@/lib/mongodb';
-     import User from '@/models/User';
-     import bcrypt from 'bcryptjs';
+import NextAuth from 'next-auth';
+import CredentialsProvider from 'next-auth/providers/credentials';
+import { connectToDatabase } from '@/lib/mongodb';
+import User from '@/models/User';
+import bcrypt from 'bcryptjs';
 
-     export const { handlers, auth, signIn, signOut } = NextAuth({
-       providers: [
-         CredentialsProvider({
-           name: 'Credentials',
-           credentials: {
-             email: { label: 'Email', type: 'email' },
-             password: { label: 'Password', type: 'password' },
-           },
-           async authorize(credentials) {
-             if (!credentials?.email || !credentials?.password) {
-               throw new Error('Missing credentials');
-             }
-             await connectToDatabase();
-             const user = await User.findOne({ email: credentials.email });
-             if (!user || !user.password) {
-               throw new Error('No user found or invalid user data');
-             }
-             const isValid = await bcrypt.compare(String(credentials.password), user.password);
-             if (!isValid) {
-               throw new Error('Invalid password');
-             }
-             return { id: user._id.toString(), name: user.name, email: user.email };
-           },
-         }),
-       ],
-       pages: {
-         signIn: '/login',
-       },
-       session: {
-         strategy: 'jwt',
-       },
-       callbacks: {
-  async jwt({ token, user }) {
-    if (user) {
-      token.id = user.id as string;
-    }
-    return token;
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  providers: [
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Missing credentials');
+        }
+
+        await connectToDatabase();
+        const user = await User.findOne({ email: credentials.email });
+        if (!user || !user.password) {
+          throw new Error('No user found or invalid user data');
+        }
+
+        const isValid = await bcrypt.compare(String(credentials.password), user.password);
+        if (!isValid) {
+          throw new Error('Invalid password');
+        }
+
+        return { id: user._id.toString(), name: user.name, email: user.email };
+      },
+    }),
+  ],
+
+  pages: {
+    signIn: '/login',
   },
-  async session({ session, token }) {
-    if (token && typeof token.id === "string") {
-      (session.user as any).id = token.id;
-    }
-    return session;
+
+  session: {
+    strategy: 'jwt',
   },
-},
 
-       debug: true,
-     });
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id as string;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token && typeof token.id === "string") {
+        (session.user as any).id = token.id;
+      }
+      return session;
+    },
+  },
 
-     export const { GET, POST } = handlers;
+  debug: true,
+
+  // ✅ Fix for "UntrustedHost" error
+  trustHost: true,
+});
+
+export const { GET, POST } = handlers;
