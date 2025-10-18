@@ -1,9 +1,21 @@
 // src/app/api/auth/[...nextauth]/route.ts
-     import NextAuth from 'next-auth';
+     import NextAuth, { NextAuthOptions, Session, Token } from 'next-auth';
      import CredentialsProvider from 'next-auth/providers/credentials';
      import { connectToDatabase } from '@/lib/mongodb';
      import User from '@/models/User';
      import bcrypt from 'bcryptjs';
+
+     interface ExtendedToken extends Token {
+       id?: string;
+     }
+
+     interface ExtendedSession extends Session {
+       user: {
+         id?: string;
+         name?: string | null;
+         email?: string | null;
+       };
+     }
 
      export const { handlers, auth, signIn, signOut } = NextAuth({
        providers: [
@@ -37,20 +49,20 @@
          strategy: 'jwt',
        },
        callbacks: {
-         async jwt({ token, user }) {
+         async jwt({ token, user }: { token: ExtendedToken; user?: { id: string; name?: string; email?: string } }) {
            if (user) {
              token.id = user.id;
            }
            return token;
          },
-         async session({ session, token }) {
-           if (token?.id) {
+         async session({ session, token }: { session: ExtendedSession; token: ExtendedToken }) {
+           if (token.id) {
              session.user.id = token.id;
            }
            return session;
          },
        },
        debug: true,
-     });
+     } as NextAuthOptions);
 
      export const { GET, POST } = handlers;
