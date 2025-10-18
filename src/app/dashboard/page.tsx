@@ -1,33 +1,19 @@
-'use client';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { auth } from '@/auth';
+import { redirect } from 'next/navigation';
 
-export default function Dashboard() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+export default async function Dashboard() {
+  const session = await auth();
 
-  console.log('Session:', session);
-  console.log('Status:', status);
+  console.log('Session:', session); // Debug log
+  console.log('Status:', session ? 'authenticated' : 'unauthenticated'); // Debug log
 
-  useEffect(() => {
-    if (status === 'loading') return;
-    if (!session) {
-      router.push('/login');
-      return;
-    }
-  }, [session, status, router]);
-
-  if (status === 'loading') {
-    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
-  }
-
-  if (!session) {
-    return null;
+  if (!session?.user) {
+    redirect('/login');
+    return null; // Optional, but ensures no render if redirecting
   }
 
   // ✅ Get user safely
-  const user = session?.user;
+  const user = session.user;
   const role = user?.role ?? 'student';
 
   return (
