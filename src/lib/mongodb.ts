@@ -30,8 +30,9 @@ async function connectToDatabase() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      connectTimeoutMS: 30000,  // Increase timeout for Vercel
+      serverSelectionTimeoutMS: 30000,
     };
-
     // ✅ Fixed this section
     if (!MONGODB_URI) {
       throw new Error("❌ MONGODB_URI is not defined in .env.local");

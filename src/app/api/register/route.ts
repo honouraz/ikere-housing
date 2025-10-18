@@ -20,6 +20,7 @@
          await user.save();
          return NextResponse.json({ message: 'User created' }, { status: 201 });
        } catch (error:unknown) {
+        console.error('Signup error:', error); // Logs to Vercel for debugging
          return NextResponse.json({ error: 'Server error' }, { status: 500 });
        }
      }
