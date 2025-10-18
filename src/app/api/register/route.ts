@@ -19,7 +19,7 @@
          const user = new User({ name, email, password: hashedPassword });
          await user.save();
          return NextResponse.json({ message: 'User created' }, { status: 201 });
-       } catch (error) {
+       } catch (error:unknown) {
          return NextResponse.json({ error: 'Server error' }, { status: 500 });
        }
      }
