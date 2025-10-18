@@ -37,19 +37,20 @@
          strategy: 'jwt',
        },
        callbacks: {
-         async jwt({ token, user }) {
-           if (user) {
-             token.id = user.id;
-           }
-           return token;
-         },
-         async session({ session, token }) {
-           if (token.id) {
-             session.user.id = token.id;
-           }
-           return session;
-         },
-       },
+  async jwt({ token, user }) {
+    if (user) {
+      token.id = user.id as string;
+    }
+    return token;
+  },
+  async session({ session, token }) {
+    if (token && typeof token.id === "string") {
+      (session.user as any).id = token.id;
+    }
+    return session;
+  },
+},
+
        debug: true,
      });
 

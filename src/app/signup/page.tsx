@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { UserPlus, Mail, Lock, GraduationCap, Home } from 'lucide-react';
 
 export default function SignupPage() {
   const [form, setForm] = useState({ 
@@ -43,7 +42,7 @@ export default function SignupPage() {
       <div className="max-w-md w-full space-y-8 p-8">
         <div className="text-center">
           <div className="mx-auto h-16 w-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center">
-            <UserPlus className="h-8 w-8 text-white" />
+            
           </div>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">Join BOUESTI student housing scheme.</h2>
           <h3 className="text-sm text-gray-600">Create your account</h3>

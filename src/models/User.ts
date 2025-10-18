@@ -1,7 +1,16 @@
-import mongoose from "mongoose";
+import mongoose, { Document } from "mongoose";
 import crypto from "crypto";
 
-const UserSchema = new mongoose.Schema({
+export interface IUser extends Document {
+  name: string;
+  email: string;
+  password: string;
+  role: "student" | "agent" | "admin";
+  verificationToken?: string;
+  generateVerificationToken: () => string;
+}
+
+const UserSchema = new mongoose.Schema<IUser>({
   name: String,
   email: { type: String, unique: true },
   password: String,
@@ -9,10 +18,10 @@ const UserSchema = new mongoose.Schema({
   verificationToken: String,
 });
 
-// Add to UserSchema methods:
 UserSchema.methods.generateVerificationToken = function () {
   this.verificationToken = crypto.randomBytes(32).toString("hex");
   return this.verificationToken;
 };
 
-export default mongoose.models.User || mongoose.model("User", UserSchema);
+const User = mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
+export default User;

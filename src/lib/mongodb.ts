@@ -32,10 +32,16 @@ async function connectToDatabase() {
       bufferCommands: false,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+    // ✅ Fixed this section
+    if (!MONGODB_URI) {
+      throw new Error("❌ MONGODB_URI is not defined in .env.local");
+    }
+
+    cached.promise = mongoose.connect(MONGODB_URI as string, opts).then((mongoose) => {
       return mongoose;
     });
   }
+
   cached.conn = await cached.promise;
   return cached.conn;
 }
