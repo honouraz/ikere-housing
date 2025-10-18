@@ -19,13 +19,10 @@
              }
              await connectToDatabase();
              const user = await User.findOne({ email: credentials.email });
-             if (!user) {
-               throw new Error('No user found');
+             if (!user || !user.password) {
+               throw new Error('No user found or invalid user data');
              }
-             if (typeof user.password !== 'string') {
-               throw new Error('Invalid user data');
-             }
-             const isValid = await bcrypt.compare(credentials.password, user.password);
+             const isValid = await bcrypt.compare(String(credentials.password), user.password);
              if (!isValid) {
                throw new Error('Invalid password');
              }
