@@ -1,13 +1,13 @@
 // src/auth.ts
 import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
+import Credentials from "next-auth/providers/credentials";
 import { connectToDatabase } from "./lib/mongodb";
 import User from "./models/User";
 import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
-    CredentialsProvider({
+    Credentials({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
@@ -24,11 +24,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("No user found");
         }
 
-        const isValid = await bcrypt.compare(String(credentials.password), user.password);
-        if (!isValid) {
+        const valid = await bcrypt.compare(
+          String(credentials.password),
+          user.password
+        );
+        if (!valid) {
           throw new Error("Invalid password");
         }
 
+        // ✅ Minimal, clean return object
         return {
           id: user._id.toString(),
           name: user.name,
@@ -49,20 +53,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = user.role;
+        token.role = (user as any).role; // 👈 avoids type complaints
       }
       return token;
     },
     async session({ session, token }) {
-      if (token.id) {
-        session.user.id = token.id;
-      }
-      if (token.role) {
-        session.user.role = token.role; // ✅ should now be recognized
-      }
+      if (token?.id) (session.user as any).id = token.id;
+      if (token?.role) (session.user as any).role = token.role;
       return session;
     },
   },
 
-  debug: true,
+  debug: process.env.NODE_ENV === "development",
 });
