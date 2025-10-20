@@ -1,42 +1,25 @@
-import { NextRequest, NextResponse } from 'next/server';
+// src/app/api/auth/signup/routes.ts
 import { connectToDatabase } from '@/lib/mongodb';
 import User from '@/models/User';
-import bcrypt from 'bcryptjs'; 
+import { NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs'; // Added back
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   try {
-    await connectToDatabase();
-    const { name, email, password, role } = await request.json();
-    
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (existingUser) {
-      return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
+    const { name, email, password } = await request.json();
+    if (!name || !email || !password) {
+      return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
-    
-    const user = new User({ 
-      name, 
-      email: email.toLowerCase(), 
-      password, 
-      role 
-    });
-    
-    const verificationToken = user.generateVerificationToken();
+    await connectToDatabase();
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return NextResponse.json({ error: 'User already exists' }, { status: 400 });
+    }
+    const hashedPassword = await bcrypt.hash(password, 10); // Hash password
+    const user = new User({ name, email, password: hashedPassword }); // Use hashed password
     await user.save();
-
-    user.isVerified = true; // Auto-verify for testing
-await user.save();
-
-    // Email verification (configure SMTP later)
-    // await sendVerificationEmail(email, verificationToken);
-    
-    console.log(`Verification token for ${email}: ${verificationToken}`); // For testing
-    
-    return NextResponse.json({ 
-      success: true, 
-      message: 'User created. Check console for verification token or implement email.',
-      verificationToken // Remove in production
-    });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ message: 'User created' }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json({ error: 'Server error: ' + (error as Error).message }, { status: 500 });
   }
 }

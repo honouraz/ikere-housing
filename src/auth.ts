@@ -1,51 +1,49 @@
-// src/app/api/auth/[...nextauth]/route.ts
-import NextAuth from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import { connectToDatabase } from '@/lib/mongodb';
-import User from '@/models/User';
-import bcrypt from 'bcryptjs';
+// src/auth.ts
+import NextAuth from "next-auth";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { connectToDatabase } from "./lib/mongodb";
+import User from "./models/User";
+import bcrypt from "bcryptjs";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     CredentialsProvider({
-      name: 'Credentials',
+      name: "Credentials",
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error('Missing credentials');
+          throw new Error("Missing credentials");
         }
 
         await connectToDatabase();
         const user = await User.findOne({ email: credentials.email });
         if (!user || !user.password) {
-          throw new Error('No user found or invalid user data');
+          throw new Error("No user found");
         }
 
         const isValid = await bcrypt.compare(String(credentials.password), user.password);
         if (!isValid) {
-          throw new Error('Invalid password');
+          throw new Error("Invalid password");
         }
 
         return {
           id: user._id.toString(),
           name: user.name,
           email: user.email,
-          role: user.role || 'student',
+          role: user.role || "student",
         };
       },
     }),
   ],
 
   pages: {
-    signIn: '/login',
+    signIn: "/login",
   },
 
-  session: {
-    strategy: 'jwt',
-  },
+  session: { strategy: "jwt" },
 
   callbacks: {
     async jwt({ token, user }) {
@@ -53,20 +51,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id;
         token.role = user.role;
       }
-      return token as any; // temporary fix
+      return token;
     },
     async session({ session, token }) {
-      if (token.id && typeof token.id === 'string') {
+      if (token.id) {
         session.user.id = token.id;
       }
       if (token.role) {
-        session.user.role = token.role;
+        session.user.role = token.role; // ✅ should now be recognized
       }
-      return session as any; // temporary fix
+      return session;
     },
   },
 
   debug: true,
 });
-
-export const { GET, POST } = handlers;
